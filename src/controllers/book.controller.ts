@@ -8,13 +8,25 @@ import { sendNotFoundResponse, sendSuccessNoDataResponse, sendSuccessResponse } 
 
 export const listBooks = async (request: Request, response: Response, next: NextFunction) => {
   try {
-    const books = await BookService.listBooks();
-    return sendSuccessResponse(response, books);
+    const page = parseInt(request.query.page as string, 10) || 1;
+    const limit = parseInt(request.query.limit as string, 10) || 10;
+
+    const { books, total } = await BookService.listBooks(page, limit);
+    const totalPages = Math.ceil(total / limit);
+
+    return sendSuccessResponse(response, {
+      data: books,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages,
+      },
+    });
   } catch (error: any) {
     next(error);
   }
 };
-
 export const getBook = async (request: Request, response: Response, next: NextFunction) => {
   try {
     const id = parseInt(request.params.id, 10);

@@ -1,22 +1,34 @@
 import { db } from '../utils/db.server';
 import { TBookID, TBookRead, TBookWrite } from '../types/general';
 
-export const listBooks = async (): Promise<TBookRead[]> => {
-  return db.book.findMany({
-    select: {
-      id: true,
-      title: true,
-      datePublished: true,
-      isFiction: true,
-      author: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
+export const listBooks = async (
+  page: number,
+  limit: number
+): Promise<{ books: TBookRead[]; total: number }> => {
+  const skip = (page - 1) * limit;
+
+  const [books, total] = await Promise.all([
+    db.book.findMany({
+      skip,
+      take: limit,
+      select: {
+        id: true,
+        title: true,
+        datePublished: true,
+        isFiction: true,
+        author: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
         },
       },
-    },
-  });
+    }),
+    db.book.count(),
+  ]);
+
+  return { books, total };
 };
 
 export const getBook = async (id: TBookID): Promise<TBookRead | null> => {
